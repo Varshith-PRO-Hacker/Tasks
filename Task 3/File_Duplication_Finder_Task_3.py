@@ -4,6 +4,7 @@
 
 import hashlib
 import os
+import logging
 
 def compute_sha256(file_path):
     hasher = hashlib.sha256()
@@ -11,8 +12,6 @@ def compute_sha256(file_path):
     with open(file_path, "rb") as f: # Open the file in binary mode.
         while True:
             chunk = f.read(4096) # Read files in chunks of 4096 bytes
-            if not chunk:
-                break
             hasher.update(chunk) #Update the hash with file content
     
     return hasher.hexdigest() # Return the final hash value as a hexadecimal string
@@ -39,3 +38,42 @@ def find_duplicates(directory):
 #Example Use:
 # Duplicates = find_duplicates("path/to/directory")
 # print(Duplicates)
+
+#setup logging for recoding the deleted files
+logging.basicConfig(filename="duplicate_files.log", level=logging.INFO, format="%(asctime)s - %(messages)s")
+    #Logs deleted files into "duplicate_files.log".
+    #Format → Timestamp - Deleted File Path.
+    #Helps track which files were deleted for record-keeping.
+
+def manual_deletion(duplicates):
+    for file_hash, file_list in duplicates.items():
+    #Loops through each group of duplicate files in the dictionary.
+    #file_hash → SHA256 hash of the files.
+    #file_list → List of duplicate file paths for that hash.
+        print(f"\nDuplicate group (SHA256: {file_hash}: )")
+        #Prints each duplicate group (grouped by SHA256 hash).
+        #Numbering each file (start=1) makes it easier for the user to select files.
+        for idx, file in enumerate(file_list, start=1):
+            print(f"{idx} {file}")
+        
+        user_input = input("Which file would you like to delete. Choose the numbers seperated by ',' or type none to skip: ")
+
+        if user_input.lower() == "none":
+            continue #Skip deletion for this group.
+
+        try:
+            indexes_to_delete = [int(i) - 1 for i in user_input.split(",")]
+            
+            for i in indexes_to_delete:
+                if 0 <= i < len(file_list):
+                    file_to_delete = file_list[i]
+                    os.remove(file_to_delete)
+
+                    logging.info(f"Deleted: {file_to_delete}")
+                    print(f"Deleted: {file_to_delete}")
+                
+                else:
+                    print(f"invalid index: {i+1}")
+        
+        except ValueError:
+            print("Invalid input. Please enter numbers seperated by commas.")
